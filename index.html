@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Responsive Tic Tac Toe Game</title>
+<style>
+  /* Reset and base styles */
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #game-container {
+    background: #1f1f38;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(118, 75, 162, 0.6);
+    width: 350px;
+    max-width: 90vw;
+    height: 420px;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    user-select: none;
+  }
+  h1 {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 10px;
+    font-weight: 700;
+    font-size: 2rem;
+    letter-spacing: 0.1em;
+  }
+  #status {
+    color: #a8a8c0;
+    font-size: 1.1rem;
+    text-align: center;
+    margin-bottom: 15px;
+    min-height: 1.4em;
+  }
+  #board {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .cell {
+    background: #2d2d54;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 4.5rem;
+    font-weight: 900;
+    color: #d8d8f8;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    user-select: none;
+  }
+  .cell:hover {
+    background: #4a4a82;
+  }
+  .cell.disabled {
+    cursor: default;
+    color: #9999b3;
+  }
+  #reset-btn {
+    margin-top: 15px;
+    padding: 10px 0;
+    border: none;
+    border-radius: 12px;
+    background: #764ba2;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px #764ba2aa;
+    transition: background-color 0.4s ease;
+    outline: none;
+  }
+  #reset-btn:hover {
+    background: #9363be;
+  }
+  /* Mobile responsiveness for small height */
+  @media (max-height: 600px) {
+    #game-container {
+      height: 380px;
+      padding: 16px;
+    }
+    .cell {
+      font-size: 3.8rem;
+    }
+    h1 {
+      font-size: 1.8rem;
+    }
+  }
+</style>
+</head>
+<body>
+  <div id="game-container" role="main" aria-label="Tic Tac Toe Game">
+    <h1>Tic Tac Toe</h1>
+    <div id="status" aria-live="polite" aria-atomic="true">Player X's turn</div>
+    <div id="board" role="grid" aria-label="Tic Tac Toe Board">
+      <div class="cell" role="gridcell" tabindex="0" data-index="0" aria-label="Cell 1"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="1" aria-label="Cell 2"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="2" aria-label="Cell 3"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="3" aria-label="Cell 4"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="4" aria-label="Cell 5"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="5" aria-label="Cell 6"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="6" aria-label="Cell 7"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="7" aria-label="Cell 8"></div>
+      <div class="cell" role="gridcell" tabindex="0" data-index="8" aria-label="Cell 9"></div>
+    </div>
+    <button id="reset-btn" aria-label="Reset game">Reset Game</button>
+  </div>
+
+<script>
+  (function() {
+    const board = document.getElementById('board');
+    const cells = Array.from(document.querySelectorAll('.cell'));
+    const statusDiv = document.getElementById('status');
+    const resetButton = document.getElementById('reset-btn');
+    let currentPlayer = 'X';
+    let boardState = Array(9).fill(null);
+    let gameActive = true;
+
+    const winningConditions = [
+      [0,1,2], [3,4,5], [6,7,8], // rows
+      [0,3,6], [1,4,7], [2,5,8], // columns
+      [0,4,8], [2,4,6]           // diagonals
+    ];
+
+    function handleCellClick(e) {
+      const index = parseInt(e.target.dataset.index);
+      if (!gameActive || boardState[index]) {
+        return;
+      }
+      updateCell(e.target, index);
+      checkResult();
+    }
+
+    function updateCell(cell, index) {
+      boardState[index] = currentPlayer;
+      cell.textContent = currentPlayer;
+      cell.classList.add('disabled');
+    }
+
+    function switchPlayer() {
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      statusDiv.textContent = `Player ${currentPlayer}'s turn`;
+    }
+
+    function checkResult() {
+      // Check for win
+      let roundWon = false;
+      for (const condition of winningConditions) {
+        const [a,b,c] = condition;
+        if (boardState[a] && boardState[a] === boardState[b] && boardState[b] === boardState[c]) {
+          roundWon = true;
+          highlightWinningCells(condition);
+          break;
+        }
+      }
+      if (roundWon) {
+        statusDiv.textContent = `Player ${currentPlayer} Wins! 🎉`;
+        gameActive = false;
+        return;
+      }
+      // Check for draw
+      if (!boardState.includes(null)) {
+        statusDiv.textContent = "It's a Draw! 🤝";
+        gameActive = false;
+        return;
+      }
+      switchPlayer();
+    }
+
+    function highlightWinningCells(cellsIndices) {
+      cellsIndices.forEach(i => {
+        cells[i].style.backgroundColor = '#9f7aea';
+        cells[i].style.color = '#fff';
+      });
+    }
+
+    function resetGame() {
+      boardState = Array(9).fill(null);
+      currentPlayer = 'X';
+      gameActive = true;
+      statusDiv.textContent = `Player ${currentPlayer}'s turn`;
+      cells.forEach(cell => {
+        cell.textContent = '';
+        cell.classList.remove('disabled');
+        cell.style.backgroundColor = '#2d2d54';
+        cell.style.color = '#d8d8f8';
+      });
+    }
+
+    // Keyboard accessibility support
+    function handleCellKeyDown(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.target.click();
+      }
+    }
+
+    // Attach event listeners
+    cells.forEach(cell => {
+      cell.addEventListener('click', handleCellClick);
+      cell.addEventListener('keydown', handleCellKeyDown);
+    });
+    resetButton.addEventListener('click', resetGame);
+  })();
+</script>
+</body>
+</html>
+
